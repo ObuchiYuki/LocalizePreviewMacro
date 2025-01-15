@@ -9,7 +9,7 @@ import XCTest
 import LocalizePreviewMacroMacros
 
 let testMacros: [String: Macro.Type] = [
-    "stringify": StringifyMacro.self,
+    "__localize": LocalizeMacro.self,
 ]
 #endif
 
@@ -17,11 +17,13 @@ final class LocalizePreviewMacroTests: XCTestCase {
     func testMacro() throws {
         #if canImport(LocalizePreviewMacroMacros)
         assertMacroExpansion(
-            """
-            #stringify(a + b)
-            """,
+            #"""
+            #__localize("Hello World \(12)", bundle: Bundle.module, locale: locale, comment: "Hello! Comment!")
+            
+            #__localize("Hello World \(12)", bundle: Bundle.module, locale: locale)
+            """#,
             expandedSource: """
-            (a + b, "a + b")
+            1
             """,
             macros: testMacros
         )
@@ -30,19 +32,13 @@ final class LocalizePreviewMacroTests: XCTestCase {
         #endif
     }
 
-    func testMacroWithStringLiteral() throws {
-        #if canImport(LocalizePreviewMacroMacros)
-        assertMacroExpansion(
-            #"""
-            #stringify("Hello, \(name)")
-            """#,
-            expandedSource: #"""
-            ("Hello, \(name)", #""Hello, \(name)""#)
-            """#,
-            macros: testMacros
-        )
-        #else
-        throw XCTSkip("macros are only supported when running tests for the host platform")
-        #endif
-    }
 }
+
+//│ ├─[1]: LabeledExprSyntax
+//│ │ ├─label: identifier("bundle")
+//│ │ ├─colon: colon
+//│ │ ├─expression: MemberAccessExprSyntax
+//│ │ │ ├─period: period
+//│ │ │ ╰─declName: DeclReferenceExprSyntax
+//│ │ │   ╰─baseName: identifier("module")
+//│ │ ╰─trailingComma: comma
